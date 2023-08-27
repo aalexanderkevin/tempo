@@ -1,14 +1,14 @@
 package container
 
 import (
-	"database/sql"
-
 	"tempo/config"
 	"tempo/repository"
+
+	"gorm.io/gorm"
 )
 
 type Container struct {
-	db     *sql.DB
+	db     *gorm.DB
 	config config.Config
 
 	// repo
@@ -19,11 +19,11 @@ func NewContainer() *Container {
 	return &Container{}
 }
 
-func (c *Container) Db() *sql.DB {
+func (c *Container) Db() *gorm.DB {
 	return c.db
 }
 
-func (c *Container) SetDb(db *sql.DB) {
+func (c *Container) SetDb(db *gorm.DB) {
 	c.db = db
 }
 
