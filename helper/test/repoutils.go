@@ -45,6 +45,33 @@ func FakeUserCreate(t *testing.T, mysqlDB *gorm.DB, callback func(user model.Use
 	return user
 }
 
+func FakeNews(t *testing.T, cb func(news model.News) model.News) model.News {
+	t.Helper()
+
+	fakeRp := model.News{
+		Id:          helper.Pointer(fake.CharactersN(7)),
+		UserId:      helper.Pointer(fake.CharactersN(6)),
+		Title:       helper.Pointer(fake.WordsN(4)),
+		Description: helper.Pointer(fake.WordsN(15)),
+	}
+	if cb != nil {
+		fakeRp = cb(fakeRp)
+	}
+	return fakeRp
+}
+
+func FakeNewsCreate(t *testing.T, mysqlDB *gorm.DB, callback func(news model.News) model.News) *model.News {
+	t.Helper()
+
+	fakeData := FakeNews(t, callback)
+
+	repo := mysqlrepo.NewNewsRepository(mysqlDB)
+	news, err := repo.Add(context.TODO(), &fakeData)
+	require.NoError(t, err)
+
+	return news
+}
+
 func FakeJwtToken(t *testing.T, data *model.User) (string, model.User) {
 	if data == nil {
 		fakeUser := FakeUser(t, func(user model.User) model.User {
