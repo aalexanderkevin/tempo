@@ -26,6 +26,7 @@ require (
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/corpix/uarand v0.0.0-20170723150923-031be390f409 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.8.2+incompatible // indirect
 	github.com/docker/docker v24.0.0-rc.2.0.20230809114405-89b542b421f4+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect

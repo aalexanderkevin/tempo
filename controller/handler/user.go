@@ -2,6 +2,7 @@ package handler
 
 import (
 	"tempo/container"
+	"tempo/controller/middleware"
 	"tempo/controller/request"
 	"tempo/controller/response"
 	"tempo/helper"
@@ -62,6 +63,7 @@ func (w *User) Register(c *gin.Context) {
 
 func (w *User) Login(c *gin.Context) {
 	logger := helper.GetLogger(c).WithField("method", "Controller.Handler.Login")
+	config := w.appContainer.Config()
 
 	// Validation
 	var req request.User
@@ -94,7 +96,16 @@ func (w *User) Login(c *gin.Context) {
 		return
 	}
 
-	response.WriteSuccessResponse(c, res)
+	token, err := middleware.GenerateJwt(*res, config.JwtSecret)
+	if err != nil {
+		response.WriteFailResponse(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.WriteSuccessResponse(c, response.Login{
+		Id:       res.Id,
+		JwtToken: token,
+	})
 }
 
 func (w *User) UpdateUser(c *gin.Context) {

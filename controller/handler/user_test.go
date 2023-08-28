@@ -204,7 +204,7 @@ func TestUser_Login(t *testing.T) {
 		require.Equal(t, http.StatusBadRequest, w.Code)
 	})
 
-	t.Run("ShouldSuccess_WhenPasswordCorrect", func(t *testing.T) {
+	t.Run("ShouldReturnToken_WhenPasswordCorrect", func(t *testing.T) {
 		t.Parallel()
 		// INIT
 		password := fake.CharactersN(7)
@@ -240,6 +240,13 @@ func TestUser_Login(t *testing.T) {
 
 		// EXPECTATION
 		require.Equal(t, http.StatusOK, w.Code)
+
+		resBody := response.Login{}
+		err = json.NewDecoder(w.Body).Decode(&resBody)
+		require.NoError(t, err)
+
+		require.Equal(t, *fakeUser.Id, *resBody.Id)
+		require.NotNil(t, resBody.JwtToken)
 	})
 }
 
