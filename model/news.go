@@ -10,6 +10,7 @@ type News struct {
 	Id          *string    `json:"id"`
 	Title       *string    `json:"title"`
 	Description *string    `json:"description"`
+	UserId      *string    `json:"user_id"`
 	CreatedAt   *time.Time `json:"created_at"`
 	UpdatedAt   *time.Time `json:"updated_at"`
 }
@@ -17,6 +18,7 @@ type News struct {
 func (n News) Validate() error {
 	return validation.ValidateStruct(
 		&n,
+		validation.Field(&n.UserId, validation.Required),
 		validation.Field(&n.Title, validation.Required),
 		validation.Field(&n.Description, validation.Required),
 	)
