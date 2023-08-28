@@ -34,3 +34,7 @@ test-infra-up:
 test-infra-down:
 	@echo ">> Shutting Down Test DB"
 	@-docker kill test-mysql
+
+generate-rest-api-docs: dep
+	@echo ">> Generating REST API docs with Swagger"
+	@swag init -dir ./controller -g routes.go -o ./docs/api/rest/swag --parseDependency --parseInternal --parseDepth 3

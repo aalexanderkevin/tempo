@@ -23,6 +23,16 @@ func NewUser(appContainer *container.Container) *User {
 	return &User{appContainer: appContainer}
 }
 
+// Register New User
+// @Summary 	Register New User
+// @Description Register New User
+// @Accept 			json
+// @Param 			body 	body 		request.User 			true 	" "
+// @Success 		200
+// @Failure 		401 	{object}	response.ErrorResponse 	"When the auth token is missing or invalid"
+// @Failure 		422 	{object}	response.ErrorResponse 	"When request validation failed"
+// @Failure 		500 	{object}	response.ErrorResponse 	"When server encountered unhandled error"
+// @Router /user/register [post]
 func (w *User) Register(c *gin.Context) {
 	logger := helper.GetLogger(c).WithField("method", "Controller.Handler.Register")
 
@@ -61,6 +71,17 @@ func (w *User) Register(c *gin.Context) {
 	response.WriteSuccessResponse(c, nil)
 }
 
+// Login User
+// @Summary 	Login User
+// @Description Login User, return the token
+// @Accept 			json
+// @Produce 		json
+// @Param 			body 	body 		request.User 			true 	" "
+// @Success 		200		{object}	response.Login			"Return the user model"
+// @Failure 		401 	{object}	response.ErrorResponse 	"When	the auth token is missing or invalid"
+// @Failure 		422 	{object}	response.ErrorResponse 	"When request validation failed"
+// @Failure 		500 	{object}	response.ErrorResponse 	"When server encountered unhandled error"
+// @Router /user/login [post]
 func (w *User) Login(c *gin.Context) {
 	logger := helper.GetLogger(c).WithField("method", "Controller.Handler.Login")
 	config := w.appContainer.Config()
@@ -108,6 +129,18 @@ func (w *User) Login(c *gin.Context) {
 	})
 }
 
+// Updater User
+// @Summary 	Updater User
+// @Description Updater User, return the updated user
+// @Accept 			json
+// @Produce 		json
+// @Param 			body 	body 		request.User 			true 	" "
+// @Success 		200		{object}	model.User			"Return the user model"
+// @Failure 		401 	{object}	response.ErrorResponse 	"When	the auth token is missing or invalid"
+// @Failure 		422 	{object}	response.ErrorResponse 	"When request validation failed"
+// @Failure 		500 	{object}	response.ErrorResponse 	"When server encountered unhandled error"
+// @Security 		BearerAuth
+// @Router /user [put]
 func (w *User) UpdateUser(c *gin.Context) {
 	logger := helper.GetLogger(c).WithField("method", "Controller.Handler.UpdateUser")
 

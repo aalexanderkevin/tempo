@@ -1,0 +1,143 @@
+basePath: /
+definitions:
+  model.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      full_name:
+        type: string
+      id:
+        type: string
+    type: object
+  request.User:
+    properties:
+      email:
+        type: string
+      full_name:
+        type: string
+      password:
+        type: string
+    type: object
+  response.ErrorResponse:
+    properties:
+      error_code:
+        type: integer
+      error_message:
+        type: string
+    type: object
+  response.Login:
+    properties:
+      id:
+        type: string
+      jwt_token:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: User service REST API specification
+  title: User API
+  version: "1.0"
+paths:
+  /user:
+    put:
+      consumes:
+      - application/json
+      description: Updater User, return the updated user
+      parameters:
+      - description: ' '
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Return the user model
+          schema:
+            $ref: '#/definitions/model.User'
+        "401":
+          description: "When\tthe auth token is missing or invalid"
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "422":
+          description: When request validation failed
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: When server encountered unhandled error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Updater User
+  /user/login:
+    post:
+      consumes:
+      - application/json
+      description: Login User, return the token
+      parameters:
+      - description: ' '
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Return the user model
+          schema:
+            $ref: '#/definitions/response.Login'
+        "401":
+          description: "When\tthe auth token is missing or invalid"
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "422":
+          description: When request validation failed
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: When server encountered unhandled error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Login User
+  /user/register:
+    post:
+      consumes:
+      - application/json
+      description: Register New User
+      parameters:
+      - description: ' '
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/request.User'
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: When the auth token is missing or invalid
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "422":
+          description: When request validation failed
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: When server encountered unhandled error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Register New User
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
