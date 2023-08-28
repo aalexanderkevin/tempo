@@ -13,6 +13,7 @@ import (
 	"tempo/repository/mysqlrepo"
 	"tempo/storage"
 
+	"github.com/icrowley/fake"
 	"github.com/stretchr/testify/require"
 )
 
@@ -93,3 +94,44 @@ func TestNewsRepository_Get(t *testing.T) {
 
 }
 
+func TestNewsRepository_Update(t *testing.T) {
+	t.Run("ShouldNotFoundError_WhenIdNotExist", func(t *testing.T) {
+		//-- init
+		db := storage.MySqlDbConn(&dbName)
+		defer cleanDB(t, db)
+		id := helper.Pointer("invalid-id")
+
+		//-- code under test
+		newsRepo := mysqlrepo.NewNewsRepository(db)
+		user, err := newsRepo.Update(context.TODO(), id, &model.News{})
+		require.Error(t, err)
+
+		//-- assert
+		require.EqualError(t, err, model.NewNotFoundError().Error())
+		require.Nil(t, user)
+	})
+
+	t.Run("ShouldUpdateUser", func(t *testing.T) {
+		//-- init
+		db := storage.MySqlDbConn(&dbName)
+		defer cleanDB(t, db)
+
+		news := test.FakeNewsCreate(t, db, nil)
+		updateNews := &model.News{
+			Title: helper.Pointer(fake.Word()),
+		}
+
+		//-- code under test
+		newsRepo := mysqlrepo.NewNewsRepository(db)
+		res, err := newsRepo.Update(context.TODO(), news.Id, updateNews)
+		require.NoError(t, err)
+
+		//-- assert
+		require.NotNil(t, res)
+		require.NotEqual(t, *news.Title, *res.Title)
+		require.Equal(t, *updateNews.Title, *res.Title)
+		require.Equal(t, *news.UserId, *res.UserId)
+		require.Equal(t, *news.Description, *res.Description)
+	})
+
+}

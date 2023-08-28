@@ -51,3 +51,23 @@ func (u *NewsRepo) Get(ctx context.Context, id *string) (*model.News, error) {
 	return gormModel.ToModel(), nil
 }
 
+func (n *NewsRepo) Update(ctx context.Context, id *string, user *model.News) (*model.News, error) {
+	_, err := n.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	gormModel := News{}.FromModel(*user)
+
+	tx := n.Db.WithContext(ctx)
+	err = tx.Model(&News{Id: id}).Updates(&gormModel).Error
+	if err != nil {
+		var mysqlErr *mysql.MySQLError
+		if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 {
+			return nil, model.NewDuplicateError()
+		}
+		return nil, err
+	}
+
+	return n.Get(ctx, id)
+}
