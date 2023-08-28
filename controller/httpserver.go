@@ -27,6 +27,7 @@ type httpServer struct {
 
 type controllers struct {
 	user handler.User
+	news handler.News
 }
 
 func NewHttpServer(container *container.Container) *httpServer {
@@ -39,6 +40,7 @@ func NewHttpServer(container *container.Container) *httpServer {
 
 	controllers := controllers{
 		*handler.NewUser(container),
+		*handler.NewNews(container),
 	}
 	requestHandler := &httpServer{container.Config(), engine, controllers}
 	requestHandler.setupRouting()

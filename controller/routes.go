@@ -30,6 +30,11 @@ func (h *httpServer) setupRouting() {
 	router.POST("/user/register", h.controllers.user.Register)
 	router.POST("/user/login", h.controllers.user.Login)
 
-	router.Use(middleware.NewHmacJwtMiddleware([]byte(h.config.JwtSecret))).PUT("/user", h.controllers.user.UpdateUser)
+	router.Use(middleware.NewHmacJwtMiddleware([]byte(h.config.JwtSecret)))
+	{
+		router.PUT("/user", h.controllers.user.UpdateUser)
+
+		router.POST("/news", h.controllers.news.Add)
+	}
 
 }
