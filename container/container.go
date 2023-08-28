@@ -13,6 +13,7 @@ type Container struct {
 
 	// repo
 	userRepo repository.User
+	newsRepo repository.News
 }
 
 func NewContainer() *Container {
@@ -41,4 +42,12 @@ func (c *Container) UserRepo() repository.User {
 
 func (c *Container) SetUserRepo(userRepo repository.User) {
 	c.userRepo = userRepo
+}
+
+func (c *Container) NewsRepo() repository.News {
+	return c.newsRepo
+}
+
+func (c *Container) SetNewsRepo(newsRepo repository.News) {
+	c.newsRepo = newsRepo
 }
