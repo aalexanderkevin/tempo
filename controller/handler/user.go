@@ -111,6 +111,13 @@ func (w *User) Login(c *gin.Context) {
 func (w *User) UpdateUser(c *gin.Context) {
 	logger := helper.GetLogger(c).WithField("method", "Controller.Handler.UpdateUser")
 
+	// auth
+	user, err := middleware.GetJWTData(c)
+	if err != nil {
+		response.WriteFailResponse(c, http.StatusUnauthorized, err)
+		return
+	}
+
 	// Validation
 	var req request.User
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -121,7 +128,7 @@ func (w *User) UpdateUser(c *gin.Context) {
 
 	// Action
 	userUseCase := usecase.NewUser(w.appContainer)
-	res, err := userUseCase.Update(c, req.Email, &model.User{
+	res, err := userUseCase.Update(c, user.Email, &model.User{
 		Email:    req.Email,
 		FullName: req.FullName,
 	})

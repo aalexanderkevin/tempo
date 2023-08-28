@@ -252,20 +252,140 @@ func TestUser_Login(t *testing.T) {
 
 func TestUser_UpdateCake(t *testing.T) {
 	t.Parallel()
-	t.Run("ShouldReturnErrorBadRequest_WhenRequestPayloadIsInvalidJson", func(t *testing.T) {
+	t.Run("ShouldReturnErrorUnAuthorized_WhenRequestTokenIsInvalid", func(t *testing.T) {
 		t.Parallel()
 		// INIT
+		token := "token"
 		router := test.SetupHttpHandler(t, func(appContainer *container.Container) *container.Container {
 			return appContainer
 		})
 
 		// CODE UNDER TEST
-		w, err := performRequest(router, "PUT", "/user", nil, nil, nil)
+		w, err := performRequest(router, "PUT", "/user", nil, map[string]string{
+			"Authorization": "Bearer " + token,
+			"Content-Type":  "application/json",
+		}, nil)
+		require.NoError(t, err)
+		defer printOnFailed(t)(w.Body.String())
+
+		// EXPECTATION
+		require.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	t.Run("ShouldReturnErrorBadRequest_WhenRequestPayloadIsInvalidJson", func(t *testing.T) {
+		t.Parallel()
+		// INIT
+		token, _ := test.FakeJwtToken(t, nil)
+		router := test.SetupHttpHandler(t, func(appContainer *container.Container) *container.Container {
+			return appContainer
+		})
+
+		// CODE UNDER TEST
+		w, err := performRequest(router, "PUT", "/user", nil, map[string]string{
+			"Authorization": "Bearer " + token,
+			"Content-Type":  "application/json",
+		}, nil)
 		require.NoError(t, err)
 		defer printOnFailed(t)(w.Body.String())
 
 		// EXPECTATION
 		require.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("ShouldReturnErrorInternalError_WhenFailedToUpdateUser", func(t *testing.T) {
+		t.Parallel()
+		// INIT
+		fakeUser := test.FakeUser(t, func(user model.User) model.User {
+			user.Email = helper.Pointer("email@gmail.com")
+			return user
+		})
+		token, _ := test.FakeJwtToken(t, &fakeUser)
+		reqBody := request.User{
+			FullName: helper.Pointer(fake.FullName()),
+		}
+		var buf bytes.Buffer
+		err := json.NewEncoder(&buf).Encode(reqBody)
+		require.NoError(t, err)
+
+		userMock := &mocks.User{}
+		userMock.On("Get", mock.Anything, repository.UserGetFilter{
+			Email: fakeUser.Email,
+		}).Return(&fakeUser, nil).Once()
+		userMock.On("Update", mock.Anything, *fakeUser.Id, &model.User{
+			FullName: reqBody.FullName,
+		}).Return(nil, errors.New("error update")).Once()
+
+		router := test.SetupHttpHandler(t, func(appContainer *container.Container) *container.Container {
+			appContainer.SetUserRepo(userMock)
+			return appContainer
+		})
+
+		// CODE UNDER TEST
+		w, err := performRequest(router, "PUT", "/user", &buf, map[string]string{
+			"Authorization": "Bearer " + token,
+			"Content-Type":  "application/json",
+		}, nil)
+		require.NoError(t, err)
+		defer printOnFailed(t)(w.Body.String())
+
+		// EXPECTATION
+		require.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+
+	t.Run("ShouldReturnUpdatedUser_WhenSuccessUpdate", func(t *testing.T) {
+		t.Parallel()
+		// INIT
+		fakeUser := test.FakeUser(t, func(user model.User) model.User {
+			user.Email = helper.Pointer("email@gmail.com")
+			return user
+		})
+		token, _ := test.FakeJwtToken(t, &fakeUser)
+		reqBody := request.User{
+			FullName: helper.Pointer(fake.FullName()),
+		}
+		var buf bytes.Buffer
+		err := json.NewEncoder(&buf).Encode(reqBody)
+		require.NoError(t, err)
+
+		userMock := &mocks.User{}
+		userMock.On("Get", mock.Anything, repository.UserGetFilter{
+			Email: fakeUser.Email,
+		}).Return(&fakeUser, nil).Once()
+		userMock.On("Update", mock.Anything, *fakeUser.Id, &model.User{
+			FullName: reqBody.FullName,
+		}).Return(&model.User{
+			Id:           fakeUser.Id,
+			FullName:     reqBody.FullName,
+			Email:        fakeUser.Email,
+			Password:     fakeUser.Password,
+			PasswordSalt: fakeUser.PasswordSalt,
+		}, nil).Once()
+
+		router := test.SetupHttpHandler(t, func(appContainer *container.Container) *container.Container {
+			appContainer.SetUserRepo(userMock)
+			return appContainer
+		})
+
+		// CODE UNDER TEST
+		w, err := performRequest(router, "PUT", "/user", &buf, map[string]string{
+			"Authorization": "Bearer " + token,
+			"Content-Type":  "application/json",
+		}, nil)
+		require.NoError(t, err)
+		defer printOnFailed(t)(w.Body.String())
+
+		// EXPECTATION
+		require.Equal(t, http.StatusOK, w.Code)
+
+		resBody := model.User{}
+		err = json.NewDecoder(w.Body).Decode(&resBody)
+		require.NoError(t, err)
+
+		require.Equal(t, *fakeUser.Id, *resBody.Id)
+		require.Equal(t, *fakeUser.Email, *resBody.Email)
+		require.Equal(t, *reqBody.FullName, *resBody.FullName)
+		require.Nil(t, resBody.Password)
+		require.Nil(t, resBody.PasswordSalt)
 	})
 
 }
