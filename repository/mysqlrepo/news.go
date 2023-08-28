@@ -36,3 +36,18 @@ func (u *NewsRepo) Add(ctx context.Context, news *model.News) (*model.News, erro
 	return gormModel.ToModel(), nil
 }
 
+func (u *NewsRepo) Get(ctx context.Context, id *string) (*model.News, error) {
+	gormModel := News{}
+	q := u.Db.WithContext(ctx).Where("id = ?", *id)
+
+	err := q.First(&gormModel).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.NewNotFoundError()
+		}
+		return nil, err
+	}
+
+	return gormModel.ToModel(), nil
+}
+

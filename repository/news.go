@@ -7,4 +7,5 @@ import (
 
 type News interface {
 	Add(ctx context.Context, news *model.News) (*model.News, error)
+	Get(ctx context.Context, id *string) (*model.News, error)
 }

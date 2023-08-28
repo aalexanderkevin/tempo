@@ -40,6 +40,32 @@ func (_m *News) Add(ctx context.Context, news *model.News) (*model.News, error) 
 	return r0, r1
 }
 
+// Get provides a mock function with given fields: ctx, id
+func (_m *News) Get(ctx context.Context, id *string) (*model.News, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.News
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *string) (*model.News, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *string) *model.News); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.News)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 type mockConstructorTestingTNewNews interface {
 	mock.TestingT
 	Cleanup(func())
