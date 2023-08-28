@@ -252,3 +252,142 @@ func TestNews_GetNews(t *testing.T) {
 	})
 
 }
+
+func TestNews_UpdateNews(t *testing.T) {
+	t.Parallel()
+	t.Run("ShouldReturnErrorUnAuthorized_WhenRequestTokenIsInvalid", func(t *testing.T) {
+		t.Parallel()
+		// INIT
+		token := "token"
+		router := test.SetupHttpHandler(t, func(appContainer *container.Container) *container.Container {
+			return appContainer
+		})
+
+		// CODE UNDER TEST
+		w, err := performRequest(router, "PUT", "/news/id", nil, map[string]string{
+			"Authorization": "Bearer " + token,
+			"Content-Type":  "application/json",
+		}, nil)
+		require.NoError(t, err)
+		defer printOnFailed(t)(w.Body.String())
+
+		// EXPECTATION
+		require.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	t.Run("ShouldReturnErrorBadRequest_WhenRequestPayloadIsInvalidJson", func(t *testing.T) {
+		t.Parallel()
+		// INIT
+		token, _ := test.FakeJwtToken(t, nil)
+		router := test.SetupHttpHandler(t, func(appContainer *container.Container) *container.Container {
+			return appContainer
+		})
+
+		// CODE UNDER TEST
+		w, err := performRequest(router, "PUT", "/news/id", nil, map[string]string{
+			"Authorization": "Bearer " + token,
+			"Content-Type":  "application/json",
+		}, nil)
+		require.NoError(t, err)
+		defer printOnFailed(t)(w.Body.String())
+
+		// EXPECTATION
+		require.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("ShouldReturnErrorInternalError_WhenFailedToUpdateNews", func(t *testing.T) {
+		t.Parallel()
+		// INIT
+		fakeUser := test.FakeUser(t, func(user model.User) model.User {
+			user.Email = helper.Pointer("email@gmail.com")
+			return user
+		})
+		token, _ := test.FakeJwtToken(t, &fakeUser)
+		fakeNews := test.FakeNews(t, func(news model.News) model.News {
+			news.UserId = fakeUser.Id
+			return news
+		})
+		reqBody := request.News{
+			Title: helper.Pointer(fake.WordsN(3)),
+		}
+		var buf bytes.Buffer
+		err := json.NewEncoder(&buf).Encode(reqBody)
+		require.NoError(t, err)
+
+		newsMock := &mocks.News{}
+		newsMock.On("Update", mock.Anything, fakeNews.Id, &model.News{
+			Title: reqBody.Title,
+		}).Return(nil, errors.New("error update")).Once()
+
+		router := test.SetupHttpHandler(t, func(appContainer *container.Container) *container.Container {
+			appContainer.SetNewsRepo(newsMock)
+			return appContainer
+		})
+
+		// CODE UNDER TEST
+		w, err := performRequest(router, "PUT", "/news/"+*fakeNews.Id, &buf, map[string]string{
+			"Authorization": "Bearer " + token,
+			"Content-Type":  "application/json",
+		}, nil)
+		require.NoError(t, err)
+		defer printOnFailed(t)(w.Body.String())
+
+		// EXPECTATION
+		require.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+
+	t.Run("ShouldReturnUpdatedUser_WhenSuccessUpdate", func(t *testing.T) {
+		t.Parallel()
+		// INIT
+		fakeUser := test.FakeUser(t, func(user model.User) model.User {
+			user.Email = helper.Pointer("email@gmail.com")
+			return user
+		})
+		token, _ := test.FakeJwtToken(t, &fakeUser)
+		fakeNews := test.FakeNews(t, func(news model.News) model.News {
+			news.UserId = fakeUser.Id
+			return news
+		})
+		reqBody := request.News{
+			Title:       fakeNews.Title,
+			Description: fakeNews.Description,
+		}
+		var buf bytes.Buffer
+		err := json.NewEncoder(&buf).Encode(reqBody)
+		require.NoError(t, err)
+
+		newsMock := &mocks.News{}
+		newsMock.On("Update", mock.Anything, fakeNews.Id, &model.News{
+			Title:       reqBody.Title,
+			Description: reqBody.Description,
+		}).Return(&fakeNews, nil).Once()
+
+		router := test.SetupHttpHandler(t, func(appContainer *container.Container) *container.Container {
+			appContainer.SetNewsRepo(newsMock)
+			return appContainer
+		})
+
+		// CODE UNDER TEST
+		w, err := performRequest(router, "PUT", "/news/"+*fakeNews.Id, &buf, map[string]string{
+			"Authorization": "Bearer " + token,
+			"Content-Type":  "application/json",
+		}, nil)
+		require.NoError(t, err)
+		defer printOnFailed(t)(w.Body.String())
+
+		// EXPECTATION
+		require.Equal(t, http.StatusOK, w.Code)
+
+		resBody := model.News{}
+		err = json.NewDecoder(w.Body).Decode(&resBody)
+		require.NoError(t, err)
+
+		require.Equal(t, *fakeNews.Id, *resBody.Id)
+		require.Equal(t, *fakeNews.UserId, *resBody.UserId)
+		require.Equal(t, *fakeNews.Title, *resBody.Title)
+		require.Equal(t, *fakeNews.Description, *resBody.Description)
+		require.Nil(t, resBody.CreatedAt)
+		require.Nil(t, resBody.UpdatedAt)
+	})
+
+}

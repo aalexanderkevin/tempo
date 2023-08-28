@@ -118,3 +118,56 @@ func (w *News) Get(c *gin.Context) {
 
 	response.WriteSuccessResponse(c, res)
 }
+
+// Update News
+// @Summary 	Update News
+// @Description Update News
+// @Accept 			json
+// @Produce 		json
+// @Param id path string true "news id"
+// @Param 			body 	body 		request.News 			true 	" "
+// @Success 		200		{object}	model.News				"Return the news model"
+// @Failure 		401 	{object}	response.ErrorResponse 	"When	the auth token is missing or invalid"
+// @Failure 		422 	{object}	response.ErrorResponse 	"When request validation failed"
+// @Failure 		500 	{object}	response.ErrorResponse 	"When server encountered unhandled error"
+// @Security 		BearerAuth
+// @Router /news/:id [put]
+func (w *News) Update(c *gin.Context) {
+	logger := helper.GetLogger(c).WithField("method", "Controller.Handler.Update")
+
+	// auth
+	_, err := middleware.GetJWTData(c)
+	if err != nil {
+		response.WriteFailResponse(c, http.StatusUnauthorized, err)
+		return
+	}
+
+	// Validation
+	id := c.Param("id")
+
+	var req request.News
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.WithError(err).Warning("bad request error")
+		response.WriteFailResponse(c, http.StatusBadRequest, err)
+		return
+	}
+
+	// Action
+	newsUseCase := usecase.NewNews(w.appContainer)
+	res, err := newsUseCase.Update(c, &id, &model.News{
+		Title:       req.Title,
+		Description: req.Description,
+	})
+	if err != nil {
+		var e model.Error
+		if !errors.As(err, &e) {
+			logger.WithError(err).Warning("error update news")
+			response.WriteFailResponse(c, http.StatusInternalServerError, err)
+		} else {
+			response.WriteFailResponse(c, e.Code, e)
+		}
+		return
+	}
+
+	response.WriteSuccessResponse(c, res)
+}

@@ -36,6 +36,7 @@ func (h *httpServer) setupRouting() {
 
 		router.POST("/news", h.controllers.news.Add)
 		router.GET("/news/:id", h.controllers.news.Get)
+		router.PUT("/news/:id", h.controllers.news.Update)
 	}
 
 }
