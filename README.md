@@ -31,9 +31,14 @@ make migrate
 make run-server
 ```
 
+To see the api docs, you can access on 
+```
+http://localhost:8080/docs/swagger/index.html#
+```
+
 ## Testing
 
-To run test, run the following command:
+To run unit test and integration test, run the following command:
 
 ```
 make test-all
