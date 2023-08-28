@@ -8,7 +8,9 @@ import (
 )
 
 const (
-	ContextKeyRequestId Key = "requestId"
+	ContextKeyRequestId   Key = "requestId"
+	ContextKeyJwtData     Key = "jwtData"
+	ContextKeyTokenBearer Key = "tokenBearer"
 )
 
 type Key string
