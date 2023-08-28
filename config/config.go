@@ -30,8 +30,9 @@ type Config struct {
 			V1 string `default:"/v1" env:"SERVICE_PATH_API"`
 		}
 	}
-	DB       DBConfig
-	LogLevel string `default:"INFO" env:"LOG_LEVEL"`
+	DB        DBConfig
+	LogLevel  string `default:"INFO" env:"LOG_LEVEL"`
+	JwtSecret string `required:"true" env:"JWT_SECRET"`
 }
 
 var config *Config
