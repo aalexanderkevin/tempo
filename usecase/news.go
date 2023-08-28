@@ -55,3 +55,19 @@ func (n *News) Get(ctx context.Context, id *string) (*model.News, error) {
 	return user, nil
 }
 
+func (n *News) Update(ctx context.Context, id *string, req *model.News) (*model.News, error) {
+	logger := helper.GetLogger(ctx).WithField("method", "usecase.News.Update")
+
+	if id == nil {
+		logger.Error("missing id")
+		return nil, model.NewParameterError(helper.Pointer("missing id"))
+	}
+
+	res, err := n.News.Update(ctx, id, req)
+	if err != nil {
+		logger.WithError(err).Warning("Failed update News")
+		return nil, err
+	}
+
+	return res, nil
+}

@@ -151,3 +151,73 @@ func TestNews_Login(t *testing.T) {
 	})
 }
 
+func TestNews_Update(t *testing.T) {
+	t.Parallel()
+	t.Run("ShouldReturnError_WhenIdIsMissing", func(t *testing.T) {
+		t.Parallel()
+		// INIT
+		appContainer := container.Container{}
+
+		// CODE UNDER TEST
+		uc := usecase.NewNews(&appContainer)
+		res, err := uc.Update(context.Background(), nil, &model.News{})
+		require.Error(t, err)
+		require.True(t, model.IsParameterError(err))
+		require.Nil(t, res)
+
+	})
+
+	t.Run("ShouldReturnError_WhenErrorUpdateNews", func(t *testing.T) {
+		t.Parallel()
+		// INIT
+		fakeNews := test.FakeNews(t, nil)
+		updateNews := &model.News{
+			Title: helper.Pointer(fake.Words()),
+		}
+
+		newsMock := &mocks.News{}
+		newsMock.On("Update", mock.Anything, fakeNews.Id, updateNews).Return(nil, errors.New("error update")).Once()
+
+		appContainer := container.Container{}
+		appContainer.SetNewsRepo(newsMock)
+
+		// CODE UNDER TEST
+		uc := usecase.NewNews(&appContainer)
+		res, err := uc.Update(context.Background(), fakeNews.Id, updateNews)
+		require.Error(t, err)
+		require.EqualError(t, err, "error update")
+		require.Nil(t, res)
+
+		newsMock.AssertExpectations(t)
+	})
+
+	t.Run("ShouldUpdateNews", func(t *testing.T) {
+		t.Parallel()
+		// INIT
+		fakeNews := test.FakeNews(t, nil)
+		updateNews := &model.News{
+			Title: helper.Pointer(fake.Words()),
+		}
+		newsMock := &mocks.News{}
+		newsMock.On("Update", mock.Anything, fakeNews.Id, updateNews).Return(&model.News{
+			Id:          fakeNews.Id,
+			UserId:      fakeNews.UserId,
+			Description: fakeNews.Description,
+			Title:       updateNews.Title,
+		}, nil).Once()
+
+		appContainer := container.Container{}
+		appContainer.SetNewsRepo(newsMock)
+
+		// CODE UNDER TEST
+		uc := usecase.NewNews(&appContainer)
+		res, err := uc.Update(context.Background(), fakeNews.Id, updateNews)
+		require.NoError(t, err)
+		require.NotNil(t, res)
+		require.Equal(t, *updateNews.Title, *res.Title)
+		require.Equal(t, *fakeNews.UserId, *res.UserId)
+		require.Equal(t, *fakeNews.Description, *res.Description)
+
+		newsMock.AssertExpectations(t)
+	})
+}
