@@ -157,3 +157,98 @@ func TestNews_AddNews(t *testing.T) {
 	})
 
 }
+
+func TestNews_GetNews(t *testing.T) {
+	t.Parallel()
+	t.Run("ShouldReturnErrorUnAuthorized_WhenRequestTokenIsInvalid", func(t *testing.T) {
+		t.Parallel()
+		// INIT
+		token := "token"
+		router := test.SetupHttpHandler(t, func(appContainer *container.Container) *container.Container {
+			return appContainer
+		})
+
+		// CODE UNDER TEST
+		w, err := performRequest(router, "GET", "/news/id", nil, map[string]string{
+			"Authorization": "Bearer " + token,
+		}, nil)
+		require.NoError(t, err)
+		defer printOnFailed(t)(w.Body.String())
+
+		// EXPECTATION
+		require.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	t.Run("ShouldReturnErrorInternalError_WhenFailedToGetNews", func(t *testing.T) {
+		t.Parallel()
+		// INIT
+		fakeUser := test.FakeUser(t, func(user model.User) model.User {
+			user.Email = helper.Pointer("email@gmail.com")
+			return user
+		})
+		token, _ := test.FakeJwtToken(t, &fakeUser)
+		id := helper.Pointer("id")
+
+		newsMock := &mocks.News{}
+		newsMock.On("GET", mock.Anything, id).Return(nil, errors.New("error get")).Once()
+
+		router := test.SetupHttpHandler(t, func(appContainer *container.Container) *container.Container {
+			appContainer.SetNewsRepo(newsMock)
+			return appContainer
+		})
+
+		// CODE UNDER TEST
+		w, err := performRequest(router, "GET", "/news/"+*id, nil, map[string]string{
+			"Authorization": "Bearer " + token,
+		}, nil)
+		require.NoError(t, err)
+		defer printOnFailed(t)(w.Body.String())
+
+		// EXPECTATION
+		require.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+
+	t.Run("ShouldReturnExistingNews", func(t *testing.T) {
+		t.Parallel()
+		// INIT
+		fakeUser := test.FakeUser(t, func(user model.User) model.User {
+			user.Email = helper.Pointer("email@gmail.com")
+			return user
+		})
+		token, _ := test.FakeJwtToken(t, &fakeUser)
+		fakeNews := test.FakeNews(t, func(news model.News) model.News {
+			news.UserId = fakeUser.Id
+			return news
+		})
+
+		newsMock := &mocks.News{}
+		newsMock.On("Get", mock.Anything, fakeNews.Id).Return(&fakeNews, nil).Once()
+
+		router := test.SetupHttpHandler(t, func(appContainer *container.Container) *container.Container {
+			appContainer.SetNewsRepo(newsMock)
+			return appContainer
+		})
+
+		// CODE UNDER TEST
+		w, err := performRequest(router, "GET", "/news/"+*fakeNews.Id, nil, map[string]string{
+			"Authorization": "Bearer " + token,
+		}, nil)
+		require.NoError(t, err)
+		defer printOnFailed(t)(w.Body.String())
+
+		// EXPECTATION
+		require.Equal(t, http.StatusOK, w.Code)
+
+		resBody := model.News{}
+		err = json.NewDecoder(w.Body).Decode(&resBody)
+		require.NoError(t, err)
+
+		require.Equal(t, *fakeNews.Id, *resBody.Id)
+		require.Equal(t, *fakeNews.UserId, *resBody.UserId)
+		require.Equal(t, *fakeNews.Title, *resBody.Title)
+		require.Equal(t, *fakeNews.Description, *resBody.Description)
+		require.Nil(t, resBody.CreatedAt)
+		require.Nil(t, resBody.UpdatedAt)
+	})
+
+}

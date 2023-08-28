@@ -29,7 +29,7 @@ func NewNews(appContainer *container.Container) *News {
 // @Accept 			json
 // @Produce 		json
 // @Param 			body 	body 		request.News 			true 	" "
-// @Success 		200		{object}	model.News			"Return the user model"
+// @Success 		200		{object}	model.News				"Return the news model"
 // @Failure 		401 	{object}	response.ErrorResponse 	"When	the auth token is missing or invalid"
 // @Failure 		422 	{object}	response.ErrorResponse 	"When request validation failed"
 // @Failure 		500 	{object}	response.ErrorResponse 	"When server encountered unhandled error"
@@ -64,6 +64,51 @@ func (w *News) Add(c *gin.Context) {
 		var e model.Error
 		if !errors.As(err, &e) {
 			logger.WithError(err).Warning("error add news")
+			response.WriteFailResponse(c, http.StatusInternalServerError, err)
+		} else {
+			response.WriteFailResponse(c, e.Code, e)
+		}
+		return
+	}
+
+	response.WriteSuccessResponse(c, res)
+}
+
+// Get News
+// @Summary 	Get News
+// @Description Get News
+// @Produce 		json
+// @Param id path string true "news id"
+// @Success 		200		{object}	model.News				"Return the news model"
+// @Failure 		401 	{object}	response.ErrorResponse 	"When	the auth token is missing or invalid"
+// @Failure 		422 	{object}	response.ErrorResponse 	"When request validation failed"
+// @Failure 		500 	{object}	response.ErrorResponse 	"When server encountered unhandled error"
+// @Security 		BearerAuth
+// @Router /news/:id [get]
+func (w *News) Get(c *gin.Context) {
+	logger := helper.GetLogger(c).WithField("method", "Controller.Handler.Add")
+
+	// auth
+	_, err := middleware.GetJWTData(c)
+	if err != nil {
+		response.WriteFailResponse(c, http.StatusUnauthorized, err)
+		return
+	}
+
+	// Validation
+	id := c.Param("id")
+	if id == "" {
+		response.WriteFailResponse(c, http.StatusBadRequest, errors.New("missing id"))
+		return
+	}
+
+	// Action
+	newsUseCase := usecase.NewNews(w.appContainer)
+	res, err := newsUseCase.Get(c, &id)
+	if err != nil {
+		var e model.Error
+		if !errors.As(err, &e) {
+			logger.WithError(err).Warning("error get news")
 			response.WriteFailResponse(c, http.StatusInternalServerError, err)
 		} else {
 			response.WriteFailResponse(c, e.Code, e)
