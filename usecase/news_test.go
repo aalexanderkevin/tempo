@@ -90,3 +90,64 @@ func TestNews_Add(t *testing.T) {
 	})
 }
 
+func TestNews_Login(t *testing.T) {
+	t.Parallel()
+	t.Run("ShouldReturnError_WhenIdIsMissing", func(t *testing.T) {
+		t.Parallel()
+		// INIT
+		appContainer := container.Container{}
+
+		// CODE UNDER TEST
+		uc := usecase.NewNews(&appContainer)
+		res, err := uc.Get(context.Background(), nil)
+		require.Error(t, err)
+		require.True(t, model.IsParameterError(err))
+		require.Nil(t, res)
+
+	})
+
+	t.Run("ShouldReturnError_WhenErrorGetUser", func(t *testing.T) {
+		t.Parallel()
+		// INIT
+		fakeNews := test.FakeNews(t, nil)
+
+		newsMock := &mocks.News{}
+		newsMock.On("Get", mock.Anything, fakeNews.Id).Return(nil, errors.New("error get")).Once()
+
+		appContainer := container.Container{}
+		appContainer.SetNewsRepo(newsMock)
+
+		// CODE UNDER TEST
+		uc := usecase.NewNews(&appContainer)
+		res, err := uc.Get(context.Background(), fakeNews.Id)
+		require.Error(t, err)
+		require.EqualError(t, err, "error get")
+		require.Nil(t, res)
+
+		newsMock.AssertExpectations(t)
+	})
+
+	t.Run("ShouldReturnExistingNews", func(t *testing.T) {
+		t.Parallel()
+		// INIT
+		fakeNews := test.FakeNews(t, nil)
+
+		newsMock := &mocks.News{}
+		newsMock.On("Get", mock.Anything, fakeNews.Id).Return(&fakeNews, nil).Once()
+
+		appContainer := container.Container{}
+		appContainer.SetNewsRepo(newsMock)
+
+		// CODE UNDER TEST
+		uc := usecase.NewNews(&appContainer)
+		res, err := uc.Get(context.Background(), fakeNews.Id)
+		require.NoError(t, err)
+		require.NotNil(t, res)
+		require.Equal(t, *fakeNews.UserId, *res.UserId)
+		require.Equal(t, *fakeNews.Title, *res.Title)
+		require.Equal(t, *fakeNews.Description, *res.Description)
+
+		newsMock.AssertExpectations(t)
+	})
+}
+
