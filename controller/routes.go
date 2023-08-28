@@ -12,4 +12,7 @@ func (h *httpServer) setupRouting() {
 	})
 
 	// API
+	router.POST("/user/register", h.controllers.user.Register)
+	router.POST("/user/login", h.controllers.user.Login)
+	router.PUT("/user", h.controllers.user.UpdateUser)
 }
