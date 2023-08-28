@@ -96,7 +96,7 @@ func TestUser_Register(t *testing.T) {
 		require.Equal(t, "error insert", resBody.Message)
 	})
 
-	t.Run("ShouldReturnNewCake", func(t *testing.T) {
+	t.Run("ShouldReturnSuccess", func(t *testing.T) {
 		t.Parallel()
 		// INIT
 		fakeUser := test.FakeUser(t, func(user model.User) model.User {
@@ -250,7 +250,7 @@ func TestUser_Login(t *testing.T) {
 	})
 }
 
-func TestUser_UpdateCake(t *testing.T) {
+func TestUser_UpdateUser(t *testing.T) {
 	t.Parallel()
 	t.Run("ShouldReturnErrorUnAuthorized_WhenRequestTokenIsInvalid", func(t *testing.T) {
 		t.Parallel()
